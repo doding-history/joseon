@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>조선시대 역사 블루마블 - 임진왜란과 병자호란</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --primary: #8b0000;
+            --primary-dark: #5c0000;
+            --accent: #d4af37;
+            --bg-color: #f4ebd0;
+            --board-bg: #fffaf0;
+            --tile-border: #8b5a2b;
+            --text-dark: #2c2c2c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 10px; }
+        header { text-align: center; margin-bottom: 15px; }
+        header h1 { font-size: 1.8rem; color: var(--primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header p { font-size: 0.95rem; color: #555; }
+        .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        #lobby-screen { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 450px; border: 2px solid var(--tile-border); }
+        #lobby-screen h2 { margin-bottom: 20px; color: var(--primary); }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-dark); }
+        #game-screen { display: none; width: 100%; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
+        @media(max-width: 900px) { #game-screen { grid-template-columns: 1fr; } }
+        .board-container { background: var(--board-bg); border: 4px solid var(--primary-dark); border-radius: 8px; padding: 10px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; aspect-ratio: 1/1; max-width: 700px; margin: 0 auto; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .tile { border: 1px solid var(--tile-border); padding: 4px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; font-size: 0.75rem; text-align: center; position: relative; background: #fff; overflow: hidden; }
+        .tile-header { font-weight: bold; font-size: 0.7rem; color: #fff; width: 100%; padding: 2px 0; border-radius: 2px; }
+        .tile-icon { font-size: 1.4rem; margin: 2px 0; display: flex; align-items: center; justify-content: center; height: 30px; }
+        .tile-name { font-size: 0.65rem; line-height: 1.1; overflow: hidden; max-height: 24px; }
+        .tile.start { background-color: #ffe4e1; } .tile.start .tile-header { background: #b22222; }
+        .tile.quiz { background-color: #e0f7fa; } .tile.quiz .tile-header { background: #00838f; }
+        .tile.event { background-color: #fff9c4; } .tile.event .tile-header { background: #fbc02d; color: #333; }
+        .tile.jail { background-color: #efebe9; } .tile.jail .tile-header { background: #4e342e; }
+        .control-panel { display: flex; flex-direction: column; gap: 15px; }
+        .panel-box { background: white; border: 2px solid var(--tile-border); border-radius: 8px; padding: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
+        .status-header { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .dice-area { text-align: center; }
+        .dice-box { font-size: 2.5rem; margin: 10px 0; background: #fdf5e6; border: 2px dashed var(--accent); border-radius: 8px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏛️ 조선시대 역사 블루마블 (임진왜란과 병자호란)</h1>
+        <p>멀티플레이 역사 복습 게임</p>
+    </header>
+    <div class="container">
+        <div id="lobby-screen">
+            <h2>방 입장하기</h2>
+            <div class="input-group">
+                <label>방 번호 (Room ID)</label>
+                <input type="text" id="room-input" value="class3">
+            </div>
+            <div class="input-group">
+                <label>이름 (닉네임)</label>
+                <input type="text" id="name-input" placeholder="이름을 입력하세요">
+            </div>
+            <button class="btn" id="join-btn">게임 참여하기</button>
+        </div>
+        <div id="game-screen">
+            <div class="board-container" id="board"></div>
+            <div class="control-panel">
+                <div class="panel-box">
+                    <div class="status-header">🎲 주사위 통제소</div>
+                    <div class="dice-area">
+                        <div id="dice-display" class="dice-box">🎲 대기 중</div>
+                        <button class="btn" id="roll-dice-btn">주사위 던지기</button>
+                    </div>
+                </div>
+                <div class="panel-box">
+                    <div class="status-header">⚔️ 전쟁 현황</div>
+                    <div id="player-status-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const boardTiles = [
+            { id: 0, name: "한양 (광화문)", type: "start", icon: "🏯" },
+            { id: 1, name: "부산진 전투", type: "quiz", icon: "📜" },
+            { id: 2, name: "동래성 전투", type: "quiz", icon: "📜" },
+            { id: 3, name: "군량미 보급", type: "event", icon: "🌾" },
+            { id: 4, name: "탄금대 (충주)", type: "quiz", icon: "🏰" },
+            { id: 5, name: "옥포 해전", type: "quiz", icon: "🐢" },
+            { id: 6, name: "사천 해전", type: "quiz", icon: "🐢" },
+            { id: 7, name: "당포 해전", type: "quiz", icon: "🐢" },
+            { id: 8, name: "진주성", type: "quiz", icon: "🏯" },
+            { id: 9, name: "거북선 출정", type: "quiz", icon: "🐢" },
+            { id: 10, name: "한산도 대첩", type: "quiz", icon: "🐢" },
+            { id: 11, name: "행주산성", type: "quiz", icon: "🏰" },
+            { id: 12, name: "평양성 탈환", type: "quiz", icon: "🏰" },
+            { id: 13, name: "백의종군", type: "jail", icon: "🛡️" },
+            { id: 14, name: "난중일기 기록", type: "quiz", icon: "📜" },
+            { id: 15, name: "명량해전", type: "quiz", icon: "🐢" },
+            { id: 16, name: "노량해전", type: "quiz", icon: "🐢" },
+            { id: 17, name: "조선통신사 파견", type: "quiz", icon: "📜" },
+            { id: 18, name: "광해군 중립외교", type: "quiz", icon: "📜" },
+            { id: 19, name: "후금 건국", type: "quiz", icon: "📜" },
+            { id: 20,
