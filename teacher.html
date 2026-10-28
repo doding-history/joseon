@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>조선시대 역사 블루마블 - 교사용 대시보드</title>
+    <title>조선시대 역사 블루마블 - 교사 대시보드</title>
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
         :root {
             --primary: #8b0000;
@@ -13,105 +16,197 @@
             --board-bg: #fffaf0;
             --tile-border: #8b5a2b;
             --text-dark: #2c2c2c;
+            --ok: #1f7a3f;
+            --bad: #b3261e;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-dark); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; }
-        header { text-align: center; margin-bottom: 20px; }
-        header h1 { font-size: 1.8rem; color: var(--primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        header p { font-size: 0.95rem; color: #555; }
-        .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
-        .panel { background: white; border: 2px solid var(--tile-border); border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        .panel h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .room-control { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
-        .room-control input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; width: 200px; }
-        .btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        header { text-align: center; margin-bottom: 20px; width: 100%; max-width: 1200px; display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 10px; border: 2px solid var(--tile-border); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        header h1 { font-size: 1.5rem; color: var(--primary); }
+        .room-info { font-weight: bold; font-size: 1.1rem; color: var(--primary-dark); }
+
+        .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+        
+        .panel { background: white; border: 2px solid var(--tile-border); border-radius: 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .panel h2 { font-size: 1.2rem; color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+        .controls-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 18px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; font-weight: bold; transition: background 0.2s; }
         .btn:hover { background: var(--primary-dark); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; font-size: 0.95rem; }
-        th { background-color: #fdf5e6; color: var(--primary); font-weight: bold; }
+        .btn.green { background: var(--ok); }
+        .btn.red { background: var(--bad); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+        th, td { border: 1px solid #ddd; padding: 10px 12px; text-align: center; }
+        th { background-color: #fdf5e6; color: var(--primary-dark); font-weight: bold; }
         tr:nth-child(even) { background-color: #fafafa; }
-        .log-box { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; height: 150px; overflow-y: auto; }
+
+        .room-input-box { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .room-input-box input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
     </style>
 </head>
 <body>
     <header>
-        <h1>📜 조선시대 역사 블루마블 - 교사용 대시보드</h1>
-        <p>실시간 수업 모니터링 및 학급 게임 통제 시스템</p>
+        <h1>🏛️ 조선시대 역사 블루마블 — 교사 대시보드</h1>
+        <div class="room-info" id="current-room-display">방 번호: [ 미연결 ]</div>
     </header>
 
     <div class="container">
-        <!-- 방 설정 패널 -->
+        <!-- 방 연결 설정 패널 -->
         <div class="panel">
-            <h2>🏫 수업 세션 관리</h2>
-            <div class="room-control">
-                <label for="teacher-room-input"><strong>현재 수업 방 번호:</strong></label>
-                <input type="text" id="teacher-room-input" value="class3">
-                <button class="btn" id="update-room-btn">방 연결 확인</button>
+            <h2>방 모니터링 연결</h2>
+            <div class="room-input-box">
+                <label for="teacher-room-input" style="font-weight: bold;">모니터링할 방 번호 (Room ID):</label>
+                <input type="text" id="teacher-room-input" value="class3" placeholder="예: class3">
+                <button class="btn" id="connect-room-btn">연결 시작</button>
             </div>
-            <p style="font-size: 0.85rem; color: #666;">학생들이 접속할 때 입력하는 방 번호와 일치해야 현황이 정상적으로 집계됩니다.</p>
+            <p style="font-size: 0.85rem; color: #666;">학생들이 접속한 방 번호와 동일하게 입력하면 실시간으로 학생들의 위치와 점수가 동기화됩니다.</p>
         </div>
 
-        <!-- 접속 학생 현황 -->
+        <!-- 실시간 현황판 패널 -->
         <div class="panel">
-            <h2>👥 참여 학생 현황 (<span id="student-count">0</span>명 접속 중)</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>번호</th>
-                        <th>학생 이름 (닉네임)</th>
-                        <th>현재 위치</th>
-                        <th>학습 진행 상태</th>
-                    </tr>
-                </thead>
-                <tbody id="student-table-body">
-                    <tr>
-                        <td colspan="4" style="color: #777;">학생들이 방에 입장하면 실시간으로 위치와 퀴즈 풀이 현황이 표시됩니다.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- 교사 통제 패널 -->
-        <div class="panel">
-            <h2>⚔️ 교사 통제 및 로그</h2>
-            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
-                <button class="btn" id="reset-game-btn" style="background-color: #555;">게임 전체 초기화</button>
+            <h2>
+                <span>📊 학생 실시간 접속 및 진행 현황</span>
+                <span id="connection-status" style="font-size: 0.85rem; color: #666;">상태: 대기 중</span>
+            </h2>
+            <div class="controls-bar">
+                <button class="btn green" id="reset-all-btn">모든 학생 위치 초기화</button>
+                <button class="btn red" id="clear-room-btn">방 데이터 전체 삭제</button>
             </div>
-            <div class="log-box" id="game-logs">
-                [시스템] 교사용 대시보드가 정상적으로 실행되었습니다. 학생들의 접속을 대기 중입니다...
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>번호</th>
+                            <th>학생 이름 (닉네임)</th>
+                            <th>현재 보드 위치 (칸 번호)</th>
+                            <th>획득 점수</th>
+                            <th>관리</th>
+                        </tr>
+                    <thead id="student-table-body">
+                        <!-- 동적으로 학생 데이터가 렌더링됩니다 -->
+                        <tr>
+                            <td colspan="5" style="color: #777; padding: 20px;">연결된 방의 학생들이 없습니다. 방 번호를 확인 후 연결을 시작하세요.</td>
+                        </tr>
+                    </thead>
+                </table>
             </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const roomInput = document.getElementById("teacher-room-input");
-            const updateBtn = document.getElementById("update-room-btn");
-            const logBox = document.getElementById("game-logs");
+        // Firebase 설정 (학생용 index.html과 동일한 설정값 입력 필요)
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-            function addLog(message) {
-                const timeStr = new Date().toLocaleTimeString();
-                logBox.innerHTML += `<br>[${timeStr}] ${message}`;
-                logBox.scrollTop = logBox.scrollHeight;
+        let activeRoomRef = null;
+
+        document.getElementById("connect-room-btn").addEventListener("click", () => {
+            const roomId = document.getElementById("teacher-room-input").value.trim();
+            if (!roomId) {
+                alert("방 번호를 입력해주세요!");
+                return;
             }
 
-            updateBtn.addEventListener("click", () => {
-                const roomName = roomInput.value.trim();
-                if (!roomName) {
-                    alert("방 번호를 입력해주세요!");
+            if (activeRoomRef) {
+                activeRoomRef.off(); // 기존 리스너 해제
+            }
+
+            document.getElementById("current-room-display").textContent = `방 번호: [ ${roomId} ]`;
+            document.getElementById("connection-status").textContent = "상태: 실시간 연동 중 (🟢)";
+            document.getElementById("connection-status").style.color = "var(--ok)";
+
+            activeRoomRef = db.ref(`rooms/${roomId}/players`);
+            
+            // 실시간 데이터 감시
+            activeRoomRef.on("value", (snapshot) => {
+                const players = snapshot.val();
+                const tbody = document.getElementById("student-table-body");
+                tbody.innerHTML = "";
+
+                if (!players) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="color: #777; padding: 20px;">현재 접속 중인 학생이 없습니다.</td></tr>`;
                     return;
                 }
-                addLog(`방 번호 '${roomName}'(으)로 모니터링을 연결했습니다.`);
-                alert(`방 번호 '${roomName}' 설정이 적용되었습니다.`);
-            });
 
-            document.getElementById("reset-game-btn").addEventListener("click", () => {
-                if (confirm("정말 게임을 초기화하시겠습니까? 모든 학생의 위치와 점수가 리셋됩니다.")) {
-                    addLog("교사에 의해 게임이 초기화되었습니다.");
-                    alert("게임이 초기화되었습니다.");
+                let index = 1;
+                for (const [name, data] of Object.entries(players)) {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${index++}</td>
+                        <td style="font-weight: bold; color: var(--primary);">${name}</td>
+                        <td>${data.position !== undefined ? data.position : 0}번 칸</td>
+                        <td style="color: var(--accent); font-weight: bold;">★ ${data.score !== undefined ? data.score : 0}점</td>
+                        <td>
+                            <button class="btn red" style="padding: 4px 10px; font-size: 0.8rem;" onclick="kickPlayer('${roomId}', '${name}')">강퇴/삭제</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
                 }
+            }, (error) => {
+                console.error(error);
+                alert("Firebase 데이터 연동 중 오류가 발생했습니다.");
             });
+        });
+
+        // 학생 개별 삭제(강퇴) 함수
+        window.kickPlayer = function(roomId, playerName) {
+            if (confirm(`'${playerName}' 학생을 게임에서 내보내시겠습니까?`)) {
+                db.ref(`rooms/${roomId}/players/${playerName}`).remove()
+                    .then(() => {
+                        alert("학생이 삭제되었습니다.");
+                    })
+                    .catch((err) => {
+                        alert("삭제 실패: " + err.message);
+                    });
+            }
+        };
+
+        // 전체 학생 위치 초기화 버튼
+        document.getElementById("reset-all-btn").addEventListener("click", () => {
+            const roomId = document.getElementById("teacher-room-input").value.trim();
+            if (!roomId) return;
+            if (confirm("모든 학생의 위치와 점수를 0으로 초기화하시겠습니까?")) {
+                db.ref(`rooms/${roomId}/players`).once("value", (snapshot) => {
+                    const players = snapshot.val();
+                    if (players) {
+                        const updates = {};
+                        for (const name in players) {
+                            updates[`${name}/position`] = 0;
+                            updates[`${name}/score`] = 0;
+                        }
+                        db.ref(`rooms/${roomId}/players`).update(updates);
+                    }
+                });
+            }
+        });
+
+        // 방 데이터 전체 삭제 버튼
+        document.getElementById("clear-room-btn").addEventListener("click", () => {
+            const roomId = document.getElementById("teacher-room-input").value.trim();
+            if (!roomId) return;
+            if (confirm(`[${roomId}] 방의 모든 플레이어 기록을 완전히 삭제하시겠습니까?`)) {
+                db.ref(`rooms/${roomId}`).remove().then(() => {
+                    alert("방 데이터가 삭제되었습니다.");
+                });
+            }
+        });
+
+        // 페이지 로드 시 기본 방('class3') 자동 연결 시도
+        window.addEventListener("load", () => {
+            document.getElementById("connect-room-btn").click();
         });
     </script>
 </body>
 </html>
+
+        
