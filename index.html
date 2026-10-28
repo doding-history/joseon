@@ -25,7 +25,7 @@
         header h1 { font-size: 1.8rem; color: var(--primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
         header p { font-size: 0.95rem; color: #555; }
 
-        .container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .container { width: 100%; max-width: 1250px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
         
         #lobby-screen { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 450px; border: 2px solid var(--tile-border); }
         #lobby-screen h2 { margin-bottom: 20px; color: var(--primary); }
@@ -38,195 +38,23 @@
         .btn.red { background: var(--bad); }
 
         #game-screen { display: none; width: 100%; display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
-        @media(max-width: 900px) { #game-screen { grid-template-columns: 1fr; } }
+        @media(max-width: 1000px) { #game-screen { grid-template-columns: 1fr; } }
 
-        .board-container { background: var(--board-bg); border: 4px solid var(--primary-dark); border-radius: 8px; padding: 10px; display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; aspect-ratio: 1/1; max-width: 700px; margin: 0 auto; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        /* PDF 중세 블루마블과 동일한 10x6 외곽 순환형 보드 그리드 구조 */
+        .board-container { 
+            background: var(--board-bg); 
+            border: 5px solid var(--primary-dark); 
+            border-radius: 8px; 
+            padding: 6px; 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            grid-template-rows: repeat(6, 1fr); 
+            width: 100%; 
+            aspect-ratio: 10/6; 
+            max-width: 850px; 
+            margin: 0 auto; 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15); 
+            gap: 2px;
+        }
         
-        .tile { border: 1px solid var(--tile-border); padding: 4px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; font-size: 0.75rem; text-align: center; position: relative; background: #fff; overflow: hidden; }
-        .tile-header { font-weight: bold; font-size: 0.7rem; color: #fff; width: 100%; padding: 2px 0; border-radius: 2px; }
-        .tile-icon { font-size: 1.4rem; margin: 2px 0; display: flex; align-items: center; justify-content: center; height: 30px; }
-        .tile-name { font-size: 0.65rem; line-height: 1.1; overflow: hidden; max-height: 24px; }
-        
-        .tile.start { background-color: #ffe4e1; }
-        .tile.start .tile-header { background: #b22222; }
-        .tile.quiz { background-color: #e0f7fa; }
-        .tile.quiz .tile-header { background: #00838f; }
-        .tile.event { background-color: #fff9c4; }
-        .tile.event .tile-header { background: #fbc02d; color: #333; }
-        .tile.jail { background-color: #efebe9; }
-        .tile.jail .tile-header { background: #4e342e; }
-
-        .control-panel { display: flex; flex-direction: column; gap: 15px; }
-        .panel-box { background: white; border: 2px solid var(--tile-border); border-radius: 8px; padding: 15px; box-shadow: 0 3px 10px rgba(0,0,0,0.05); }
-        .status-header { font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-bottom: 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; display: flex; align-items: center; gap: 5px; }
-        
-        .dice-area { text-align: center; }
-        .dice-box { font-size: 2.5rem; margin: 10px 0; background: #fdf5e6; border: 2px dashed var(--accent); border-radius: 8px; padding: 10px; }
-        
-        #quiz-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
-        .quiz-content { background: white; width: 100%; max-width: 600px; padding: 25px; border-radius: 12px; border: 3px solid var(--primary); box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-        .quiz-question { font-size: 1.1rem; font-weight: bold; margin-bottom: 20px; line-height: 1.4; }
-        .quiz-option { display: block; width: 100%; padding: 12px; margin-bottom: 10px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px; text-align: left; cursor: pointer; font-size: 1rem; transition: background 0.2s; }
-        .quiz-option:hover { background: #f0e6d2; border-color: var(--accent); }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>🏛️ 조선시대 역사 블루마블 (임진왜란과 병자호란)</h1>
-        <p>멀티플레이 역사 복습 게임</p>
-    </header>
-
-    <div class="container">
-        <div id="lobby-screen">
-            <h2>방 입장하기</h2>
-            <div class="input-group">
-                <label>방 번호 (Room ID)</label>
-                <input type="text" id="room-input" placeholder="예: class3" value="class3">
-            </div>
-            <div class="input-group">
-                <label>이름 (닉네임)</label>
-                <input type="text" id="name-input" placeholder="이름을 입력하세요">
-            </div>
-            <button class="btn" id="join-btn">게임 참여하기</button>
-        </div>
-
-        <div id="game-screen">
-            <div class="board-container" id="board"></div>
-
-            <div class="control-panel">
-                <div class="panel-box">
-                    <div class="status-header">🎲 주사위 통제소</div>
-                    <div class="dice-area">
-                        <div id="dice-display" class="dice-box">🎲 대기 중</div>
-                        <button class="btn" id="roll-dice-btn">주사위 던지기</button>
-                    </div>
-                </div>
-
-                <div class="panel-box">
-                    <div class="status-header">⚔️ 전쟁 현황</div>
-                    <div id="player-status-list">접속한 플레이어 목록</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 4지선다 객관식 퀴즈 모달 -->
-    <div id="quiz-modal">
-        <div class="quiz-content">
-            <h3 style="color: var(--primary); margin-bottom: 10px;" id="q-title-label">📜 역사 4지선다 퀴즈</h3>
-            <div class="quiz-question" id="q-text">문제가 여기에 표시됩니다.</div>
-            <div id="q-options"></div>
-        </div>
-    </div>
-
-    <script>
-        // Firebase 설정 (선생님의 프로젝트 설정값으로 교체 필요)
-        const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
-        // 30문항 데이터 (3번 칸 '폐모살제' 반영 완료)
-        const questions = [
-            { id: 1, question: "16세기 중반 이후 동아시아 정세에 대한 설명으로 옳지 않은 것은?", options: ["명에서는 환관과 외척의 횡포가 심해졌다.", "명은 몽골과 왜구의 침입으로 사회적 불안이 커졌다.", "조선은 붕당 간 대립으로 정치적 혼란이 이어졌다.", "일본에서는 도쿠가와 이에야스가 전국 시대를 통일하고 대륙 진출을 준비하였다."], answer: 4 },
-            { id: 2, question: "왜란 중 조선이 명에 지원을 요청하자 명의 지원군이 파견되었다. 조선군과 명군이 연합하여 일본군을 물리치고 탈환한 곳은?", options: ["진주성", "행주산성", "평양성", "명량"], answer: 3 },
-            { id: 3, question: "광해군이 영창대군을 죽이고 인목대비를 폐위한 사건으로, 인조반정의 명분이 된 것은?", options: ["폐모살제", "계유정난", "위화도 회군", "사화 발생"], answer: 1 },
-            { id: 4, question: "왜란 초기의 전개 과정으로 옳지 않은 것은?", options: ["부산진과 동래성이 함락되었다.", "신립이 충주에서 일본군을 크게 물리쳐 한성을 지켜 냈다.", "선조는 광해군을 세자로 책봉하고 의주까지 피란하였다.", "일본군은 20여 일 만에 한성을 점령하였다."], answer: 2 },
-            { id: 5, question: "곽재우 등 유생들이 농민을 모아 일으킨 의병에 대한 설명으로 옳은 것은?", options: ["훈련도감 소속의 정규군으로 편성되었다.", "한산도 앞바다에서 일본 수군을 격파하였다.", "승려들만 참여하여 승군이라고 불렸다.", "익숙한 지리를 활용한 전술로 일본군의 보급로를 차단하였다."], answer: 4 },
-            { id: 6, question: "이순신이 왜란 동안 쓴 일기로, 전쟁 상황이 자세히 기록되어 2013년 유네스코 세계 기록 유산에 등재된 것은?", options: ["난중일기", "징비록", "조선왕조실록", "동의보감"], answer: 1 },
-            { id: 7, question: "이순신이 이끈 수군이 서남해의 제해권을 장악하고, 충청·전라 지방을 지키며 일본군의 해상 보급로를 차단하게 된 전투는?", options: ["명량해전", "한산도 대첩", "노량해전", "행주대첩"], answer: 2 },
-            { id: 8, question: "이순신이 이끈 수군이 승리를 거둔 곳이 아닌 것은?", options: ["옥포", "사천", "행주산성", "당포"], answer: 3 },
-            { id: 9, question: "조선의 판옥선과 거북선에 대한 설명으로 옳은 것은?", options: ["판옥선은 바닥이 뾰족하여 속도가 매우 빨랐다.", "일본 전선은 가벼워서 포 공격에도 잘 견뎠다.", "판옥선은 회전이 어려워 한 방향으로만 공격할 수 있었다.", "판옥선에 지붕을 덮어 만든 거북선은 돌격선의 역할을 하였다."], answer: 4 },
-            { id: 10, question: "왜란 때의 육상 전투와 인물의 연결로 옳은 것은?", options: ["김시민 – 진주성, 권율 – 행주산성", "김시민 – 행주산성, 권율 – 진주성", "곽재우 – 평양성, 신립 – 진주성", "신립 – 행주산성, 이순신 – 진주성"], answer: 1 },
-            { id: 11, question: "다음 사건을 일어난 순서대로 바르게 나열한 것은?\n(가) 부산진·동래성 공격 (나) 한산도 대첩 (다) 정유재란 (라) 노량해전", options: ["(가)-(다)-(나)-(라)", "(나)-(가)-(다)-(라)", "(가)-(나)-(다)-(라)", "(가)-(나)-(라)-(다)"], answer: 3 },
-            { id: 12, question: "3년에 걸친 휴전 협상이 결렬되어 정유재란(1597)이 일어났다. 휴전 기간에 조선이 한 일로 옳지 않은 것은?", options: ["훈련도감 설치", "균역법 시행", "화포 개량", "조총 제작"], answer: 2 },
-            { id: 13, question: "도요토미 히데요시가 사망하자 철수하던 일본군을 이순신이 무찌르면서 왜란이 끝난 전투는?", options: ["옥포 해전", "한산도 대첩", "명량해전", "노량해전"], answer: 4 },
-            { id: 14, question: "왜란이 끼친 영향으로 옳지 않은 것은?", options: ["명은 전쟁으로 국력이 강해져 만주의 여진족을 압도하였다.", "조선에서는 토지가 황폐해지고 국가 재정이 어려워졌다.", "조선의 궁궐과 사고가 불타고 문화재를 약탈당하였다.", "일본은 끌고 간 성리학자·인쇄공·도공 등을 통해 문화 발전의 계기를 마련하였다."], answer: 1 },
-            { id: 15, question: "도쿠가와 이에야스가 에도 막부를 열고 국교 정상화를 요청하자 조선이 파견한 사절단은?", options: ["영선사", "보빙사", "조선통신사", "수신사"], answer: 3 },
-            { id: 16, question: "왜란 후 광해군의 복구 정책으로 옳은 것은?", options: ["성곽과 무기를 없애 군사비를 줄였다.", "토지 대장과 호적을 정비하여 국가 재정 수입을 늘렸다.", "후금과 군신 관계를 맺었다.", "명과의 외교 관계를 끊었다."], answer: 2 },
-            { id: 17, question: "광해군 때 여진족을 통합하여 후금을 세운 인물은?", options: ["청 태종", "도요토미 히데요시", "도쿠가와 이에야스", "누르하치"], answer: 4 },
-            { id: 18, question: "광해군의 중립외교에 대한 설명으로 옳지 않은 것은?", options: ["의리와 명분을 중시한 서인은 광해군의 외교 정책을 적극 지지하였다.", "후금이 명을 공격하자 명이 조선에 군사 지원을 요청하였다.", "광해군은 강홍립을 파견하며 상황에 맞게 대응하도록 하였다.", "명이 후금에 패하자 강홍립은 후금에 투항하였다."], answer: 1 },
-            { id: 19, question: "서인들이 인조반정(1623)을 일으키며 구실로 삼은 광해군의 행위는?", options: ["이괄을 푸대접한 일", "서인 관리들을 모두 귀양 보낸 일", "영창대군을 죽이고 인목대비를 폐위한 일", "후금과 군신 관계를 맺은 일"], answer: 3 },
-            { id: 20, question: "인조반정으로 집권한 인조와 서인 정권이 펼친 외교 정책은?", options: ["친명배금 정책", "중립외교", "일본과의 단교 정책", "친청배명 정책"], answer: 1 },
-            { id: 21, question: "이괄의 난에 대한 설명으로 옳은 것은?", options: ["광해군이 영창대군을 죽이자 이에 항의하여 일으켰다.", "병자호란 때 청에 맞서 일으킨 의병 활동이다.", "이괄은 인조반정에 반대한 대표적 인물이었다.", "인조반정의 공신이던 이괄이 대우에 불만을 품고 일으켰고, 후금이 이를 구실로 정묘호란을 일으켰다."], answer: 4 },
-            { id: 22, question: "정묘호란(1627)에 대한 설명으로 옳은 것은?", options: ["인조가 남한산성으로 피신하였다.", "인조는 강화도로 피신하였고, 조선군과 의병이 후금에 맞서 싸웠다.", "인조가 삼전도에서 삼배구고두를 하였다.", "청이 조선에 군신 관계를 요구하며 침입하였다."], answer: 2 },
-            { id: 23, question: "정묘호란 때 조선이 후금과 맺은 관계는?", options: ["군신 관계", "불가침 동맹 관계", "형제 관계", "사대 관계"], answer: 3 },
-            { id: 24, question: "병자호란을 앞두고 조선 조정에서 벌어진 논쟁에 대한 설명으로 옳은 것은?", options: ["주화론은 청과 맞서 싸우자는 주장이었다.", "척화론은 외교적으로 해결하자는 주장이었다.", "주화론과 척화론 모두 군신 관계를 받아들이자는 입장이었다.", "주화론은 외교적 해결을, 척화론은 맞서 싸울 것을 주장하였다."], answer: 4 },
-            { id: 25, question: "병자호란 때 청군이 빠르게 진격해 오자 인조와 신하들이 피신한 곳은?", options: ["남한산성", "강화도", "의주", "진주성"], answer: 1 },
-            { id: 26, question: "삼전도의 굴욕과 그 결과에 대한 설명으로 옳지 않은 것은?", options: ["인조는 남한산성에서 한 달 넘게 버티다 항복하였다.", "인조는 삼전도에서 청 태종에게 삼배구고두를 하였다.", "조선은 청에 공물을 바치지 않아도 되었다.", "소현세자와 봉림대군 등이 청에 끌려갔다."], answer: 3 },
-            { id: 27, question: "병자호란 이후의 북벌 운동에 대한 설명으로 옳은 것은?", options: ["효종 사망 이후 북벌 운동이 더욱 강화되었다.", "청에 대한 반감 속에서 치욕을 씻어야 한다는 북벌론이 등장하였다.", "소현세자가 왕위에 올라 북벌을 추진하였다.", "효종은 청과 화친하기 위해 군대를 줄였다."], answer: 2 },
-            { id: 28, question: "청과의 교류가 늘면서 청의 발달된 문물을 받아들이자는 움직임을 무엇이라 하는가?", options: ["척화론", "주화론", "북벌론", "북학론"], answer: 4 },
-            { id: 29, question: "병자호란 때 청에 끌려갔다 돌아온 여성들에 대한 설명으로 옳은 것은?", options: ["가문에서 몸값을 내거나 목숨을 걸고 탈출해 돌아왔으나, 이혼을 요구받거나 가정에서 버림받기도 하였다.", "조정에서 공로를 인정하여 관직을 내렸다.", "대부분 청에 정착하여 돌아오지 않았다.", "정절을 중시하는 사회에서 열녀로 칭송받았다."], answer: 1 },
-            { id: 30, question: "효종 때 제주도에 표류한 하멜 일행을 설득하기 위해 효종이 보낸 인물은?", options: ["이삼평", "강홍립", "박연", "곽재우"], answer: 3 }
-        ];
-
-        const boardTiles = [
-            { id: 0, name: "한양 (광화문)", type: "start", icon: "🏯" },
-            { id: 1, name: "부산진 전투", type: "quiz", icon: "📜" },
-            { id: 2, name: "동래성 전투", type: "quiz", icon: "📜" },
-            { id: 3, name: "광해군의 폐모살제", type: "quiz", icon: "📜" },
-            { id: 4, name: "탄금대 (충주)", type: "quiz", icon: "🏰" },
-            { id: 5, name: "옥포 해전", type: "quiz", icon: "🐢" },
-            { id: 6, name: "사천 해전", type: "quiz", icon: "🐢" },
-            { id: 7, name: "당포 해전", type: "quiz", icon: "🐢" },
-            { id: 8, name: "진주성", type: "quiz", icon: "🏯" },
-            { id: 9, name: "거북선 출정", type: "quiz", icon: "🐢" },
-            { id: 10, name: "한산도 대첩", type: "quiz", icon: "🐢" },
-            { id: 11, name: "행주산성", type: "quiz", icon: "🏰" },
-            { id: 12, name: "평양성 탈환", type: "quiz", icon: "🏰" },
-            { id: 13, name: "백의종군", type: "jail", icon: "🛡️" },
-            { id: 14, name: "난중일기 기록", type: "quiz", icon: "📜" },
-            { id: 15, name: "명량해전", type: "quiz", icon: "🐢" },
-            { id: 16, name: "노량해전", type: "quiz", icon: "🐢" },
-            { id: 17, name: "조선통신사 파견", type: "quiz", icon: "📜" },
-            { id: 18, name: "광해군 중립외교", type: "quiz", icon: "📜" },
-            { id: 19, name: "후금 건국 (누르하치)", type: "quiz", icon: "📜" },
-            { id: 20, name: "인조반정", type: "quiz", icon: "📜" },
-            { id: 21, name: "이괄의 난", type: "quiz", icon: "📜" },
-            { id: 22, name: "정묘호란", type: "quiz", icon: "📜" },
-            { id: 23, name: "남한산성 피신", type: "quiz", icon: "🏰" },
-            { id: 24, name: "삼전도의 굴욕", type: "quiz", icon: "📜" },
-            { id: 25, name: "소현세자·봉림대군", type: "quiz", icon: "📜" },
-            { id: 26, name: "효종 북벌 운동", type: "quiz", icon: "📜" },
-            { id: 27, name: "하멜 표류와 박연", type: "quiz", icon: "📜" },
-            { id: 28, name: "북학론 대두", type: "quiz", icon: "📜" },
-            { id: 29, name: "조선왕조실록 보존", type: "quiz", icon: "📜" },
-            { id: 30, name: "암행어사 출두", type: "event", icon: "🐴" },
-            { id: 31, name: "역사 복습 완료", type: "quiz", icon: "👑" }
-        ];
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const boardEl = document.getElementById("board");
-            boardTiles.forEach(tile => {
-                const t = document.createElement("div");
-                t.className = `tile ${tile.type}`;
-                t.innerHTML = `
-                    <div class="tile-header">${tile.id}</div>
-                    <div class="tile-icon">${tile.icon}</div>
-                    <div class="tile-name">${tile.name}</div>
-                `;
-                boardEl.appendChild(t);
-            });
-
-            document.getElementById("join-btn").addEventListener("click", () => {
-                const name = document.getElementById("name-input").value.trim();
-                const roomId = document.getElementById("room-input").value.trim();
-                if (!name || !roomId) { alert("방 번호와 이름을 모두 입력해주세요!"); return; }
-                
-                document.getElementById("lobby-screen").style.display = "none";
-                document.getElementById("game-screen").style.display = "grid";
-                
-                // Firebase 실시간 위치 동기화 예시 로직 연결
-                db.ref(`rooms/${roomId}/players/${name}`).set({ position: 0, score: 0 });
-            });
-        });
-    </script>
-</body>
-</html>
+        .tile { border: 1.5px solid var(--tile-border); padding: 3px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; font-size: 0.65rem; text-align: center; position: relative; background: #fff; overflow
