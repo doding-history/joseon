@@ -5,36 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>조선시대 역사 블루마블 - 교사용 대시보드</title>
     <style>
-        :root { --primary: #8b0000; --bg-color: #f4ebd0; --text-dark: #2c2c2c; }
+        :root {
+            --primary: #8b0000;
+            --primary-dark: #5c0000;
+            --accent: #d4af37;
+            --bg-color: #f4ebd0;
+            --board-bg: #fffaf0;
+            --tile-border: #8b5a2b;
+            --text-dark: #2c2c2c;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-dark); padding: 20px; }
-        header { text-align: center; margin-bottom: 25px; }
-        header h1 { font-size: 2rem; color: var(--primary); }
-        .container { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: white; border: 2px solid #8b5a2b; border-radius: 8px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .card h3 { color: var(--primary); margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; }
+        body { background-color: var(--bg-color); color: var(--text-dark); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 15px; }
+        header { text-align: center; margin-bottom: 20px; }
+        header h1 { font-size: 1.8rem; color: var(--primary); text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header p { font-size: 0.95rem; color: #555; }
+        .container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
+        .panel { background: white; border: 2px solid var(--tile-border); border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        .panel h2 { color: var(--primary); font-size: 1.2rem; margin-bottom: 15px; border-bottom: 2px solid var(--primary); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .room-control { display: flex; gap: 10px; align-items: center; margin-bottom: 15px; }
+        .room-control input { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; width: 200px; }
+        .btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .btn:hover { background: var(--primary-dark); }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; }
-        th { background-color: #fdf5e6; color: var(--primary); }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: center; font-size: 0.95rem; }
+        th { background-color: #fdf5e6; color: var(--primary); font-weight: bold; }
+        tr:nth-child(even) { background-color: #fafafa; }
+        .log-box { background: #1e1e1e; color: #00ff00; padding: 15px; border-radius: 6px; font-family: monospace; font-size: 0.9rem; height: 150px; overflow-y: auto; }
     </style>
 </head>
 <body>
     <header>
-        <h1>📜 조선시대 역사 블루마블 - 교사 통제 대시보드</h1>
-        <p>실시간 학생 접속 및 전쟁 현황 모니터링</p>
+        <h1>📜 조선시대 역사 블루마블 - 교사용 대시보드</h1>
+        <p>실시간 수업 모니터링 및 학급 게임 통제 시스템</p>
     </header>
+
     <div class="container">
-        <div class="card">
-            <h3>⚔️ 전쟁 현황 (실시간 모니터링)</h3>
+        <!-- 방 설정 패널 -->
+        <div class="panel">
+            <h2>🏫 수업 세션 관리</h2>
+            <div class="room-control">
+                <label for="teacher-room-input"><strong>현재 수업 방 번호:</strong></label>
+                <input type="text" id="teacher-room-input" value="class3">
+                <button class="btn" id="update-room-btn">방 연결 확인</button>
+            </div>
+            <p style="font-size: 0.85rem; color: #666;">학생들이 접속할 때 입력하는 방 번호와 일치해야 현황이 정상적으로 집계됩니다.</p>
+        </div>
+
+        <!-- 접속 학생 현황 -->
+        <div class="panel">
+            <h2>👥 참여 학생 현황 (<span id="student-count">0</span>명 접속 중)</h2>
             <table>
                 <thead>
-                    <tr><th>참여 번호</th><th>학생 이름</th><th>현재 위치</th><th>공훈 점수</th><th>제어</th></tr>
+                    <tr>
+                        <th>번호</th>
+                        <th>학생 이름 (닉네임)</th>
+                        <th>현재 위치</th>
+                        <th>학습 진행 상태</th>
+                    </tr>
                 </thead>
-                <tbody>
-                    <tr><td colspan="5" style="color: #777;">연결된 학생 대기 중...</td></tr>
+                <tbody id="student-table-body">
+                    <tr>
+                        <td colspan="4" style="color: #777;">학생들이 방에 입장하면 실시간으로 위치와 퀴즈 풀이 현황이 표시됩니다.</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
+
+        <!-- 교사 통제 패널 -->
+        <div class="panel">
+            <h2>⚔️ 교사 통제 및 로그</h2>
+            <div style="margin-bottom: 15px; display: flex; gap: 10px;">
+                <button class="btn" id="reset-game-btn" style="background-color: #555;">게임 전체 초기화</button>
+            </div>
+            <div class="log-box" id="game-logs">
+                [시스템] 교사용 대시보드가 정상적으로 실행되었습니다. 학생들의 접속을 대기 중입니다...
+            </div>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const roomInput = document.getElementById("teacher-room-input");
+            const updateBtn = document.getElementById("update-room-btn");
+            const logBox = document.getElementById("game-logs");
+
+            function addLog(message) {
+                const timeStr = new Date().toLocaleTimeString();
+                logBox.innerHTML += `<br>[${timeStr}] ${message}`;
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            updateBtn.addEventListener("click", () => {
+                const roomName = roomInput.value.trim();
+                if (!roomName) {
+                    alert("방 번호를 입력해주세요!");
+                    return;
+                }
+                addLog(`방 번호 '${roomName}'(으)로 모니터링을 연결했습니다.`);
+                alert(`방 번호 '${roomName}' 설정이 적용되었습니다.`);
+            });
+
+            document.getElementById("reset-game-btn").addEventListener("click", () => {
+                if (confirm("정말 게임을 초기화하시겠습니까? 모든 학생의 위치와 점수가 리셋됩니다.")) {
+                    addLog("교사에 의해 게임이 초기화되었습니다.");
+                    alert("게임이 초기화되었습니다.");
+                }
+            });
+        });
+    </script>
 </body>
 </html>
